@@ -1,0 +1,17 @@
+# NROD Stomp Credentials
+NROD_HOST = ""
+NROD_PORT = ""
+NROD_USERNAME = ""
+NROD_PASSWORD = ""
+NROD_SUBSCRIPTION_NAME = ""
+
+# MySQL Database Credentials
+DB_HOST = ""
+DB_PORT = ""
+DB_NAME = ""
+DB_USER = ""
+DB_PASSWORD = ""
+
+# Flask
+HOST = ""
+PORT = ""
