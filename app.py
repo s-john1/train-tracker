@@ -30,11 +30,23 @@ def get_trains():
                TrainDescription.timestamp == subquery.c.newestTime
            ))
 
+
+    trust_subquery = db.session.query(
+        Trust.headcode, func.max(Trust.timestamp).label('newestTime')
+    ).group_by(Trust.headcode).filter(Trust.timestamp >= time_difference).subquery()
+
+    trust_query = db.session.query(
+        Trust
+    ).join(trust_subquery,
+           and_(
+               Trust.headcode == trust_subquery.c.headcode,
+               Trust.timestamp == trust_subquery.c.newestTime
+           ))
+
     trains = []
 
     for train in query:
-        # Look for matching TRUST entry
-        trust = Trust.query.filter_by(headcode=train.description).order_by(Trust.timestamp.desc()).first()
+        trust = trust_query.filter_by(headcode=train.description).first()
 
         operator = None
         if trust:
