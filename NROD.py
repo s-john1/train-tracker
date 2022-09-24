@@ -46,8 +46,13 @@ def process_movement_message(message):
 
 
 class Listener(stomp.ConnectionListener):
-    def __init__(self, conn):
+    def __init__(self, conn, connect_method):
         self.conn = conn
+        self.connect_method = connect_method
+
+    def on_disconnected(self):
+        print('Disconnected')
+        self.connect_method()
 
     def on_error(self, frame):
         message = frame.body
@@ -73,7 +78,7 @@ class NROD:
         self._subscription_name = subscription_name
 
         self.conn = stomp.Connection([(host, port)], keepalive=True, heartbeats=(10000, 5000))
-        self.conn.set_listener('', Listener(self.conn))
+        self.conn.set_listener('', Listener(self.conn, self.connect_and_subscribe))
         self.connect_and_subscribe()
 
     def connect_and_subscribe(self):
@@ -95,3 +100,5 @@ class NROD:
             "ack": "auto",
             "activemq.subscriptionName": self._subscription_name + "-mvt",
         })
+
+        print("Connected and subscribed")
