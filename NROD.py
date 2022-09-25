@@ -10,6 +10,10 @@ def process_td_message(message):
     if "CA_MSG" in message:
         data = message["CA_MSG"]
 
+        # Filter unwanted descriptions
+        if '*' in data['descr']:
+            return
+
         from_berth = Berth.query.filter_by(describer=data["area_id"], berth=data["from"]).first()
         to_berth = Berth.query.filter_by(describer=data["area_id"], berth=data["to"]).first()
 
