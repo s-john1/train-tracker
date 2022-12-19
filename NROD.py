@@ -1,53 +1,41 @@
 from app import db
-from models import TrainDescription, Berth, Trust
+from TrainDescription import TrainDescription
 
 import json
 import stomp
 from datetime import datetime as dt
+
+train_descriptions = {}
 
 
 def process_td_message(message):
     if "CA_MSG" in message:
         data = message["CA_MSG"]
 
+        # Testing
+        if data["area_id"] not in ["EA", "EB"]:
+            return
+
         # Filter unwanted descriptions
         if '*' in data['descr']:
             return
 
-        from_berth = Berth.query.filter_by(describer=data["area_id"], berth=data["from"]).first()
-        to_berth = Berth.query.filter_by(describer=data["area_id"], berth=data["to"]).first()
+        from_berth = data["from"]
+        to_berth = data["to"]
 
-        if from_berth and to_berth:
-            timestamp = dt.utcfromtimestamp(int(data['time']) / 1000)  # timestamp of message from train describer
+        if data['area_id'] + data['descr'] in train_descriptions:
+            # Train already known
+            # First check if train is about to step into a different area
+            train_descriptions[data['area_id'] + data['descr']].change_berth(to_berth, None)
+        else:
+            # New train description
+            train_descriptions[data['area_id'] + data['descr']] = TrainDescription(data['area_id'], data['descr'], to_berth, None, from_berth)
 
-            # Add database entry
-            description = TrainDescription(data['area_id'], data['descr'], timestamp, from_berth.id, to_berth.id)
-            db.session.add(description)
-            db.session.commit()
-
-            # Debug
-            if from_berth.latitude and from_berth.longitude and to_berth.latitude and to_berth.longitude:
-                print(f"Area {data['area_id']}: Train {data['descr']} going from "
-                      f"{from_berth.berth} ({from_berth.latitude}, {from_berth.longitude}) "
-                      f"to {to_berth.berth} ({to_berth.latitude}, {to_berth.longitude})")
+        print(train_descriptions)
 
 
 def process_movement_message(message):
-    allowed_stanox_prefixes = ['04', '12']  # Filter messages to only include a specific regions by STANOX prefix
-
-    header = message['header']
-    body = message['body']
-
-    if header['msg_type'] == "0003":  # Movement message
-        timestamp = dt.utcfromtimestamp(int(body['actual_timestamp']) / 1000)
-        headcode = body['train_id'][2:6]
-        toc_id = int(body['toc_id'])
-
-        if toc_id != 0 and body['loc_stanox'][0:2] in allowed_stanox_prefixes:
-            trust = Trust(body['train_id'], headcode, toc_id, timestamp)
-            db.session.add(trust)
-            db.session.commit()
-
+    pass
 
 class Listener(stomp.ConnectionListener):
     def __init__(self, conn, connect_method):
