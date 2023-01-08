@@ -54,13 +54,16 @@ class Operator(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     operator = db.Column(db.String)
     sector_code = db.Column(db.Integer, unique=True)
+    atoc_code = db.Column(db.VARCHAR(2), nullable=True)
 
-    def __init__(self, operator, sector_code):
+    def __init__(self, operator, sector_code, atoc_code):
         self.operator = operator
         self.sector_code = sector_code
+        self.atoc_code = atoc_code
 
     def __repr__(self):
-        return f'Operator(id={self.id}, operator={self.operator}, sector_code={self.sector_code})'
+        return f'Operator(id={self.id}, operator={self.operator}, sector_code={self.sector_code}, ' \
+               f'atoc_code={self.atoc_code})'
 
 
 class Trust(db.Model):

@@ -52,7 +52,9 @@ def get_trains():
         operator_code = None
         if trust:
             operator = trust.operator.operator
-            operator_code = trust.operator.sector_code
+
+            if trust.operator.atoc_code:
+                operator_code = trust.operator.atoc_code
 
         trains.append({'id': train.description,
                        'operator': operator,
