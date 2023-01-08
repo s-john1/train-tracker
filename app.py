@@ -49,11 +49,14 @@ def get_trains():
         trust = trust_query.filter_by(headcode=train.description).first()
 
         operator = None
+        operator_code = None
         if trust:
             operator = trust.operator.operator
+            operator_code = trust.operator.sector_code
 
-        trains.append({'description': train.description,
+        trains.append({'id': train.description,
                        'operator': operator,
+                       'operator_code': operator_code,
                        'lat': train.from_berth.latitude,
                        'lon': train.from_berth.longitude,
                        'timestamp': int((train.timestamp - dt(1970, 1, 1)) / timedelta(seconds=1))})
