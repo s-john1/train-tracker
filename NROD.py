@@ -33,7 +33,7 @@ def process_td_message(message):
 
 
 def process_movement_message(message):
-    allowed_stanox_prefixes = ['04', '12']  # Filter messages to only include a specific regions by STANOX prefix
+    allowed_stanox_prefixes = ['04', '12', '13', '15', '16']  # Filter messages to only include a specific regions by STANOX prefix
 
     header = message['header']
     body = message['body']
