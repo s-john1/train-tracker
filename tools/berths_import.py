@@ -1,5 +1,7 @@
 import json
 
+import sqlalchemy
+
 from app import db
 from models import Berth
 
@@ -11,9 +13,14 @@ with open(LOCATIONS_FILE) as file:
 
     for td in json:
         for berth_name in json[td]:
-            berth = Berth(td, berth_name, json[td][berth_name]["lat"], json[td][berth_name]["lon"])
-            print(repr(berth))
-            db.session.add(berth)
+            try:
+                berth = Berth(td, berth_name, json[td][berth_name]["lat"], json[td][berth_name]["lon"])
+                print(repr(berth))
+                db.session.add(berth)
+                db.session.commit()
 
-    db.session.commit()
+            except sqlalchemy.exc.IntegrityError:
+                db.session.rollback()
+
+
 
