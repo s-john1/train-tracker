@@ -130,3 +130,30 @@ class Smart(db.Model):
                f'stanox={self.stanox}, event={self.event}, platform={self.platform}, to_line={self.to_line}, ' \
                f'berth_offset={self.berth_offset}, route={self.route}, from_line={self.from_line}, td={self.td}, ' \
                f'comment={self.comment}, stanme={self.stanme})'
+
+
+class BerthStep(db.Model):
+    __tablename__ = "berth_steps"
+
+    id = db.Column(db.Integer, primary_key=True)
+    describer = db.Column(db.CHAR(2), nullable=False)
+    from_berth = db.Column(db.CHAR(4), nullable=False)
+    to_berth = db.Column(db.CHAR(4), nullable=False)
+    count = db.Column(db.Integer, nullable=False)
+    last_description = db.Column(db.CHAR(4), nullable=False)
+    last_timestamp = db.Column(db.TIMESTAMP, nullable=False)
+
+    __table_args__ = (db.UniqueConstraint('describer', 'from_berth', 'to_berth', name='describer_berths'),)
+
+    def __init__(self, describer, from_berth, to_berth, last_description, last_timestamp):
+        self.describer = describer
+        self.from_berth = from_berth
+        self.to_berth = to_berth
+        self.count = 1
+        self.last_description = last_description
+        self.last_timestamp = last_timestamp
+
+    def __repr__(self):
+        return f'BerthStep(id={self.id}, describer={self.describer}, from_berth={self.from_berth}, ' \
+               f'to_berth={self.to_berth}, count={self.count}, last_description={self.last_description}, ' \
+               f'last_timestamp={self.last_timestamp})'

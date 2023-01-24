@@ -1,5 +1,5 @@
 from app import db
-from models import TrainDescription, Berth, Trust
+from models import TrainDescription, Berth, Trust, BerthStep
 
 import json
 import stomp
@@ -10,6 +10,11 @@ def process_td_message(message):
     if "CA_MSG" in message:
         data = message["CA_MSG"]
 
+        timestamp = dt.utcfromtimestamp(int(data['time']) / 1000)  # timestamp of message from train describer
+
+        # Update berth step table
+        record_berth_step(data, timestamp)
+
         # Filter unwanted descriptions
         if '*' in data['descr']:
             return
@@ -18,7 +23,6 @@ def process_td_message(message):
         to_berth = Berth.query.filter_by(describer=data["area_id"], berth=data["to"]).first()
 
         if from_berth and to_berth:
-            timestamp = dt.utcfromtimestamp(int(data['time']) / 1000)  # timestamp of message from train describer
 
             # Add database entry
             description = TrainDescription(data['area_id'], data['descr'], timestamp, from_berth.id, to_berth.id)
@@ -30,6 +34,29 @@ def process_td_message(message):
                 print(f"Area {data['area_id']}: Train {data['descr']} going from "
                       f"{from_berth.berth} ({from_berth.latitude}, {from_berth.longitude}) "
                       f"to {to_berth.berth} ({to_berth.latitude}, {to_berth.longitude})")
+
+
+def record_berth_step(data, timestamp):
+    allowed_berth_step_areas = ['EB', 'EA', 'TW', 'AL', 'MO', 'T1', 'T2', 'Y1']
+    if data['area_id'] not in allowed_berth_step_areas:
+        return
+
+    # Find berth step record
+    berth_record = db.session.query(BerthStep).filter(BerthStep.describer == data['area_id'],
+                                                      BerthStep.from_berth == data['from'],
+                                                      BerthStep.to_berth == data['to']).first()
+
+    if berth_record:
+        # Update record
+        berth_record.count += 1
+        berth_record.last_description = data['descr']
+        berth_record.last_timestamp = timestamp
+    else:
+        # Create new record
+        berth_record = BerthStep(data['area_id'], data['from'], data['to'], data['descr'], timestamp)
+        db.session.add(berth_record)
+
+    db.session.commit()  # Update database
 
 
 def process_movement_message(message):
