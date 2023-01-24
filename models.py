@@ -9,43 +9,67 @@ class Berth(db.Model):
     berth = db.Column(db.CHAR(4), nullable=False)
     latitude = db.Column(db.Float, nullable=False)
     longitude = db.Column(db.Float, nullable=False)
+    borders_describer = db.Column(db.CHAR(2), nullable=True)
 
     __table_args__ = (db.UniqueConstraint('describer', 'berth', name='describer_berth'), )
 
-    def __init__(self, describer, berth, latitude, longitude):
+    def __init__(self, describer, berth, latitude, longitude, borders_describer=None):
         self.describer = describer
         self.berth = berth
         self.latitude = latitude
         self.longitude = longitude
+        self.borders_describer = borders_describer
 
     def __repr__(self):
         return f'Berth(id={self.id}, describer={self.describer}, berth={self.berth}, latitude={self.latitude}, ' \
-               f'longitude={self.longitude})'
+               f'longitude={self.longitude}, borders_describer={self.borders_describer})'
 
 
 class TrainDescription(db.Model):
-    __tablename__ = "train_descriptions"
+    __tablename__ = "train_descriptions_new"
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     describer = db.Column(db.CHAR(2), nullable=False)
     description = db.Column(db.CHAR(4), nullable=False)
-    from_berth_id = db.Column(db.Integer, db.ForeignKey(Berth.id), nullable=True)
-    to_berth_id = db.Column(db.Integer, db.ForeignKey(Berth.id), nullable=True)
-    timestamp = db.Column(db.TIMESTAMP, nullable=False)
+    current_berth_id = db.Column(db.Integer, db.ForeignKey(Berth.id), nullable=True)
+    last_report = db.Column(db.TIMESTAMP, nullable=False)
+    active = db.Column(db.Boolean, default=True, nullable=False)
+    cancelled = db.Column(db.Boolean, default=False, nullable=False)
 
-    from_berth = db.relationship(Berth, foreign_keys=from_berth_id)
-    to_berth = db.relationship(Berth, foreign_keys=to_berth_id)
+    current_berth = db.relationship(Berth, foreign_keys=current_berth_id)
 
-    def __init__(self, describer, description, timestamp, from_berth_id=None, to_berth_id=None):
+    def __init__(self, describer, description, current_berth_id, last_report, active=True, cancelled=False):
         self.describer = describer
         self.description = description
-        self.from_berth_id = from_berth_id
-        self.to_berth_id = to_berth_id
-        self.timestamp = timestamp
+        self.current_berth_id = current_berth_id
+        self.last_report = last_report
+        self.active = active
+        self.cancelled = cancelled
 
     def __repr__(self):
         return f'TrainDescription(id={self.id}, describer={self.describer}, description={self.description}, ' \
-               f'from_berth={self.from_berth}, to_berth={self.to_berth}, timestamp={repr(self.timestamp)})'
+               f'current_berth={self.current_berth}, last_report={repr(self.last_report)}, active={self.active}, ' \
+               f'cancelled={self.cancelled})'
+
+
+class BerthRecord(db.Model):
+    __tablename__ = "berth_history"
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    train_id = db.Column(db.Integer, db.ForeignKey(TrainDescription.id), nullable=False)
+    berth_id = db.Column(db.Integer, db.ForeignKey(Berth.id), nullable=False)
+    timestamp = db.Column(db.TIMESTAMP, nullable=False)
+
+    train = db.relationship(TrainDescription, foreign_keys=train_id)
+    berth = db.relationship(Berth, foreign_keys=berth_id)
+
+    def __init__(self, train_id, berth_id, timestamp):
+        self.train_id = train_id
+        self.berth_id = berth_id
+        self.timestamp = timestamp
+
+    def __repr__(self):
+        return f'BerthRecord(id={self.id}, train={self.train}, berth={self.berth}, timestamp={repr(self.timestamp)})'
 
 
 class Operator(db.Model):
