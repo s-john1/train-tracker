@@ -36,9 +36,10 @@ def process_td_message(message):
         if from_berth is None and to_berth is None:
             return
 
-        print(data["area_id"], data["descr"], data["from"], data["to"])
-
         timestamp = dt.utcfromtimestamp(int(data['time']) / 1000)  # timestamp of message from train describer
+
+        print(data["area_id"], data["descr"], data["from"], data["to"])
+        print(data["time"], timestamp)
 
         # Retrieve train object
         train = get_train(data["area_id"], data["descr"])
