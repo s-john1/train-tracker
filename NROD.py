@@ -82,6 +82,9 @@ def process_td_message(message):
                 # If to berth doesn't exist, from berth must exist here
                 train.current_berth = from_berth
 
+            # Update timestamp
+            train.last_report = timestamp
+
         # Check from berth
         if from_berth:
             print("From berth found")
