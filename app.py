@@ -22,7 +22,7 @@ def get_trains():
 
     for train in query:
         # TODO: move this check somewhere else, and ensure it runs i.e. every 30 seconds
-        if not train.active and train.last_report > dt.utcnow() - timedelta(hours=1):
+        if not train.active and train.last_report < dt.utcnow() - timedelta(minutes=5):
             print("Inactive train is old, cancelling it")
             train.cancelled = True
 
