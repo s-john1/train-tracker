@@ -21,19 +21,28 @@ def get_trains():
     trains = []
 
     for train in query:
-        # For retrieving history
-        # previous_locations = []
-        # for berth_record in train.berth_history:
-        #    previous_locations.append({'lat': berth_record.berth.latitude, 'lon': berth_record.berth.longitude,
-        #                               'timestamp': berth_record.timestamp})
+        # TODO: move this check somewhere else, and ensure it runs i.e. every 30 seconds
+        if not train.active and train.last_report > dt.utcnow() - timedelta(hours=1):
+            print("Inactive train is old, cancelling it")
+            train.cancelled = True
 
-        trains.append({'id': train.id,
-                       'description': train.description,
-                       'operator': None,
-                       'operator_code': None,
-                       'lat': train.current_berth.latitude,
-                       'lon': train.current_berth.longitude,
-                       'timestamp': int((train.last_report - dt(1970, 1, 1)) / timedelta(seconds=1))},)
+            print(train)
+            db.session.commit()
+        else:
+
+            # For retrieving history
+            # previous_locations = []
+            # for berth_record in train.berth_history:
+            #    previous_locations.append({'lat': berth_record.berth.latitude, 'lon': berth_record.berth.longitude,
+            #                               'timestamp': berth_record.timestamp})
+
+            trains.append({'id': train.id,
+                           'description': train.description,
+                           'operator': None,
+                           'operator_code': None,
+                           'lat': train.current_berth.latitude,
+                           'lon': train.current_berth.longitude,
+                           'timestamp': int((train.last_report - dt(1970, 1, 1)) / timedelta(seconds=1))})
 
     return jsonify(trains)
 
