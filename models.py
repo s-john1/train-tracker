@@ -39,7 +39,8 @@ class TrainDescription(db.Model):
     active = db.Column(db.Boolean, default=True, nullable=False)
     cancelled = db.Column(db.Boolean, default=False, nullable=False)
 
-    current_berth = db.relationship(Berth, foreign_keys=current_berth_id)
+    current_berth = db.relationship(Berth)
+    berth_history = db.relationship("BerthRecord", back_populates="train", order_by="asc(BerthRecord.timestamp)")
 
     def __init__(self, describer, description, current_berth, last_report, active=True, cancelled=False):
         self.describer = describer
@@ -63,8 +64,8 @@ class BerthRecord(db.Model):
     berth_id = db.Column(db.Integer, db.ForeignKey(Berth.id), nullable=False)
     timestamp = db.Column(db.TIMESTAMP, nullable=False)
 
-    train = db.relationship(TrainDescription, foreign_keys=train_id)
-    berth = db.relationship(Berth, foreign_keys=berth_id)
+    train = db.relationship(TrainDescription, back_populates="berth_history")
+    berth = db.relationship(Berth)
 
     def __init__(self, train_id, berth_id, timestamp):
         self.train_id = train_id
