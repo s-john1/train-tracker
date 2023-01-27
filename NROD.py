@@ -93,11 +93,9 @@ def process_td_message(message):
                         print("Train object exists in bordering describer", train)
                         # Update to berth and timestamp. Don't update describer here as this should
                         #   be handled when the train steps out the bordering describer
-                        train.current_berth = to_berth
+                        set_current_berth(train, to_berth)
                         train.last_report = timestamp
                         train.active = True
-
-                        # TODO: Add check for any trains already occupying this berth
 
                         db.session.commit()
 
@@ -107,17 +105,17 @@ def process_td_message(message):
 
                 # Train object doesn't exist, create one
                 print("Create train object, train active")
+                check_train_in_berth(to_berth)
                 train = TrainDescription(data["area_id"], data["descr"], to_berth, timestamp)
                 db.session.add(train)
 
                 train.active = True
-
-                # TODO: Add check for any trains already occupying this berth
             else:
                 print("To berth doesn't exist")
                 # If to berth doesn't exist, from berth must exist here
                 # Train object doesn't exist, create one
                 print("Create train object, train inactive")
+                check_train_in_berth(from_berth)
                 train = TrainDescription(data["area_id"], data["descr"], from_berth, timestamp)
                 db.session.add(train)
 
@@ -139,14 +137,13 @@ def process_td_message(message):
                     print()
                     return
 
+                set_current_berth(train, to_berth)
                 train.active = True
-                # TODO: Add check for any trains already occupying this berth
-                train.current_berth = to_berth
             else:
                 print("To berth not found, train inactive")
                 train.active = False
                 # If to berth doesn't exist, from berth must exist here
-                train.current_berth = from_berth
+                set_current_berth(train, from_berth)
 
             # Update timestamp
             train.last_report = timestamp
@@ -180,6 +177,27 @@ def get_train(area, description):
         TrainDescription.cancelled == 0)
 
     return query.first()
+
+
+def check_train_in_berth(berth):
+    # Check for any trains already occupying this berth
+    train = db.session.query(TrainDescription).filter(TrainDescription.cancelled == 0,
+                                                      TrainDescription.current_berth == berth).first()
+    if train:
+        # Cancel the train if its already occupying the berth
+        print("Train currently in berth, cancelling it", train)
+        train.active = False
+        train.cancelled = True
+
+    db.session.commit()
+
+
+def set_current_berth(train, berth):
+    # Remove any trains already in this berth
+    check_train_in_berth(berth)
+
+    # Update current berth
+    train.current_berth = berth
 
 
 def find_berth(area, berth):
