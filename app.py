@@ -29,9 +29,11 @@ def get_trains():
 
         trains.append({'id': train.id,
                        'description': train.description,
+                       'operator': None,
+                       'operator_code': None,
                        'lat': train.current_berth.latitude,
                        'lon': train.current_berth.longitude,
-                       'timestamp': int((train.last_report - dt(1970, 1, 1)) / timedelta(seconds=1))})
+                       'timestamp': int((train.last_report - dt(1970, 1, 1)) / timedelta(seconds=1))},)
 
     return jsonify(trains)
 
