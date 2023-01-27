@@ -17,7 +17,38 @@ def process_td_message(message):
         print(dt.utcfromtimestamp(int(data['time']) / 1000))
         print()
 
-    if "CA_MSG" in message:
+    if "CB_MSG" in message:
+        data = message["CB_MSG"]
+
+        # Testing
+        if data["area_id"] not in ["EA", "TW", "AL", "MO"]:
+            return
+
+        timestamp = dt.utcfromtimestamp(int(data['time']) / 1000)  # timestamp of message from train describer
+
+        print("CB", data["area_id"], data["descr"], data["from"])
+        print(data["time"], timestamp)
+
+        # Get berth which has been cancelled
+        berth = find_berth(data["area_id"], data["from"])
+        if berth:
+            print("Berth found")
+            # Retrieve train object
+            train = get_train(data["area_id"], data["descr"])
+
+            if train and train.current_berth == berth:
+                print("Train object found in berth, cancelling")
+                train.cancelled = True
+                train.active = False
+                train.last_report = timestamp
+
+                db.session.commit()
+            else:
+                print("Train object not found in berth")
+        else:
+            print("Berth not found, discarding")
+
+    elif "CA_MSG" in message:
         data = message["CA_MSG"]
 
         # Testing
