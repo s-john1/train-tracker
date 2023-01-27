@@ -45,21 +45,54 @@ def process_td_message(message):
         train = get_train(data["area_id"], data["descr"])
 
         if train is None:
-            print("Train object doesn't exist, create one")
-            # Train object doesn't exist, create one
-            train = TrainDescription(data["area_id"], data["descr"], None, timestamp)
+            print("Train object doesn't exist")
 
             if to_berth:
-                train.active = True
-                # TODO: Add check for any trains already occupying this berth
-                train.current_berth = to_berth
-            else:
-                train.active = False
-                # If to berth doesn't exist, from berth must exist here
-                train.current_berth = from_berth
+                print("To berth exists")
 
-            # Add train to database
-            db.session.add(train)
+                # Check if berth borders another TD (i.e. train has just entered this TD)
+                if to_berth.borders_prev_describer:
+                    print("Borders previous describer", to_berth.borders_prev_describer)
+
+                    # Attempt to find this train's objects in the previous describer
+                    #   (It's possible the previous describer hasn't yet sent the message that this
+                    #   train is leaving its area)
+                    train = get_train(to_berth.borders_prev_describer, data["descr"])
+                    if train:
+                        print("Train object exists in bordering describer", train)
+                        # Update to berth and timestamp. Don't update describer here as this should
+                        #   be handled when the train steps out the bordering describer
+                        train.current_berth = to_berth
+                        train.last_report = timestamp
+                        train.active = True
+
+                        # TODO: Add check for any trains already occupying this berth
+
+                        db.session.commit()
+
+                        # Return early, we assume we don't need to consider the 'from' berth in these cases
+                        print()
+                        return
+
+                # Train object doesn't exist, create one
+                print("Create train object, train active")
+                train = TrainDescription(data["area_id"], data["descr"], to_berth, timestamp)
+                db.session.add(train)
+
+                train.active = True
+
+                # TODO: Add check for any trains already occupying this berth
+            else:
+                print("To berth doesn't exist")
+                # If to berth doesn't exist, from berth must exist here
+                # Train object doesn't exist, create one
+                print("Create train object, train inactive")
+                train = TrainDescription(data["area_id"], data["descr"], from_berth, timestamp)
+                db.session.add(train)
+
+                train.active = False
+
+            # Add/update train to database
             db.session.commit()
 
         else:
@@ -72,6 +105,7 @@ def process_td_message(message):
                 # Discard message if to berth already matches (likely duplicate message)
                 if train.current_berth.id == to_berth.id:
                     print("Discarding message - berth already matches")
+                    print()
                     return
 
                 train.active = True
@@ -96,18 +130,12 @@ def process_td_message(message):
             db.session.commit()
 
             # If berth borders another train describer
-            if from_berth.borders_describer:
-                print("Borders describer", from_berth.borders_describer)
-                train.describer = from_berth.borders_describer  # Update for next train describer
-                berth = find_berth(from_berth.borders_describer, data["to"])
-                if berth:
-                    print("Found berth from next TD, train active", berth)
-                    train.active = True
-                    # TODO: Add check for any trains already occupying this berth
-                    train.current_berth_id = berth.id
-                else:
-                    print("Could not find berth from next TD, train inactive", data["to"])
-                    train.active = False
+            if from_berth.borders_next_describer:
+                print("Borders next describer", from_berth.borders_next_describer)
+                train.describer = from_berth.borders_next_describer  # Update for next train describer
+
+                # Assume train is active as bordering berths should be mapped
+                train.active = True
 
         db.session.commit()
         print(train)

@@ -9,20 +9,23 @@ class Berth(db.Model):
     berth = db.Column(db.CHAR(4), nullable=False)
     latitude = db.Column(db.Float, nullable=False)
     longitude = db.Column(db.Float, nullable=False)
-    borders_describer = db.Column(db.CHAR(2), nullable=True)
+    borders_next_describer = db.Column(db.CHAR(2), nullable=True)
+    borders_prev_describer = db.Column(db.CHAR(2), nullable=True)
 
     __table_args__ = (db.UniqueConstraint('describer', 'berth', name='describer_berth'), )
 
-    def __init__(self, describer, berth, latitude, longitude, borders_describer=None):
+    def __init__(self, describer, berth, latitude, longitude, borders_next_describer=None, borders_prev_describer=None):
         self.describer = describer
         self.berth = berth
         self.latitude = latitude
         self.longitude = longitude
-        self.borders_describer = borders_describer
+        self.borders_next_describer = borders_next_describer
+        self.borders_prev_describer = borders_prev_describer
 
     def __repr__(self):
         return f'Berth(id={self.id}, describer={self.describer}, berth={self.berth}, latitude={self.latitude}, ' \
-               f'longitude={self.longitude}, borders_describer={self.borders_describer})'
+               f'longitude={self.longitude}, borders_next_describer={self.borders_next_describer}, ' \
+               f'borders_prev_describer={self.borders_prev_describer})'
 
 
 class TrainDescription(db.Model):
@@ -38,10 +41,10 @@ class TrainDescription(db.Model):
 
     current_berth = db.relationship(Berth, foreign_keys=current_berth_id)
 
-    def __init__(self, describer, description, current_berth_id, last_report, active=True, cancelled=False):
+    def __init__(self, describer, description, current_berth, last_report, active=True, cancelled=False):
         self.describer = describer
         self.description = description
-        self.current_berth_id = current_berth_id
+        self.current_berth = current_berth
         self.last_report = last_report
         self.active = active
         self.cancelled = cancelled
