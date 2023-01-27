@@ -16,46 +16,22 @@ db = SQLAlchemy(app)
 
 @app.route('/get_trains')
 def get_trains():
-    time_difference = dt.utcnow() - timedelta(hours=1)
-
-    subquery = db.session.query(
-        TrainDescription.description, func.max(TrainDescription.timestamp).label('newestTime')
-    ).group_by(TrainDescription.description).filter(TrainDescription.timestamp >= time_difference).subquery()
-
-    query = db.session.query(
-        TrainDescription
-    ).join(subquery,
-           and_(
-               TrainDescription.description == subquery.c.description,
-               TrainDescription.timestamp == subquery.c.newestTime
-           ))
-
-
-    trust_subquery = db.session.query(
-        Trust.headcode, func.max(Trust.timestamp).label('newestTime')
-    ).group_by(Trust.headcode).filter(Trust.timestamp >= time_difference).subquery()
-
-    trust_query = db.session.query(
-        Trust
-    ).join(trust_subquery,
-           and_(
-               Trust.headcode == trust_subquery.c.headcode,
-               Trust.timestamp == trust_subquery.c.newestTime
-           ))
+    query = db.session.query(TrainDescription).filter(TrainDescription.cancelled == 0).all()
 
     trains = []
 
     for train in query:
-        trust = trust_query.filter_by(headcode=train.description).first()
+        # For retrieving history
+        # previous_locations = []
+        # for berth_record in train.berth_history:
+        #    previous_locations.append({'lat': berth_record.berth.latitude, 'lon': berth_record.berth.longitude,
+        #                               'timestamp': berth_record.timestamp})
 
-        operator = None
-        if trust:
-            operator = trust.operator.operator
-
-        trains.append({'description': train.description,
-                       'operator': operator,
-                       'lat': train.from_berth.latitude,
-                       'lon': train.from_berth.longitude})
+        trains.append({'id': train.id,
+                       'description': train.description,
+                       'lat': train.current_berth.latitude,
+                       'lon': train.current_berth.longitude,
+                       'timestamp': int((train.last_report - dt(1970, 1, 1)) / timedelta(seconds=1))})
 
     return jsonify(trains)
 
@@ -67,4 +43,3 @@ if __name__ == '__main__':
     nrod = NROD(conf.NROD_HOST, conf.NROD_PORT, conf.NROD_USERNAME, conf.NROD_PASSWORD, conf.NROD_SUBSCRIPTION_NAME)
 
     app.run(host=conf.HOST, port=conf.PORT)
-
