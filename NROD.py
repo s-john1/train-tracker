@@ -250,7 +250,7 @@ class NROD:
         self._password = password
         self._subscription_name = subscription_name
 
-        self.conn = stomp.Connection([(host, port)], keepalive=True, heartbeats=(10000, 5000))
+        self.conn = stomp.Connection12([(host, port)], keepalive=True, heartbeats=(15000, 15000))
         self.conn.set_listener('', Listener(self.conn, self.connect_and_subscribe))
         self.connect_and_subscribe()
 
@@ -259,7 +259,7 @@ class NROD:
             "username": self._username,
             "passcode": self._password,
             "wait": True,
-            "client-id": self._username + '1',
+            "client-id": self._username + '-' + self._subscription_name
         })
         self.conn.subscribe(**{
             "destination": "/topic/TD_ALL_SIG_AREA",
