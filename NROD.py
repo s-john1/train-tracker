@@ -94,11 +94,11 @@ class Listener(stomp.ConnectionListener):
         headers = frame.headers
 
         # TD Messages
-        if headers["destination"] == "/topic/TD_ALL_SIG_AREA":
+        if headers["destination"] == "TD_ALL_SIG_AREA":
             [process_td_message(message) for message in data]
 
         # Train Movement Message
-        elif headers["destination"] == "/topic/TRAIN_MVT_ALL_TOC":
+        elif headers["destination"] == "TRAIN_MVT_ALL_TOC":
             [process_movement_message(message) for message in data]
 
 
@@ -108,7 +108,7 @@ class NROD:
         self._password = password
         self._subscription_name = subscription_name
 
-        self.conn = stomp.Connection([(host, port)], keepalive=True, heartbeats=(10000, 5000))
+        self.conn = stomp.Connection11([(host, port)], keepalive=True, heartbeats=(10000, 10000))
         self.conn.set_listener('', Listener(self.conn, self.connect_and_subscribe))
         self.connect_and_subscribe()
 
